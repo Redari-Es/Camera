@@ -14,3 +14,14 @@ Shon
 - CameraX
 - Jetpack Compose
 - Kotlin
+
+
+## Branch
+### Main
+initial
+### Develop
+To develop the new fountion
+### Hotfix
+### feature
+### release
+### test
