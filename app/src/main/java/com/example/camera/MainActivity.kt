@@ -209,7 +209,7 @@ private fun MyCameraX() {
                             lifecycleObserver,
                             cameraSelector,
                             preview,
-//                            imageCapture
+                            imageCapture
                         )
                         Log.d("LifeCycle", "bindToLifecycle()")
                     } catch (e: Exception) {
