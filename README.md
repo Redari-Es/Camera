@@ -21,6 +21,11 @@ Shon
 initial
 ### Develop
 To develop the new fountion
+build the app use by the CameraX and Compose
+
+
+
+
 ### Hotfix
 ### feature
 ### release
