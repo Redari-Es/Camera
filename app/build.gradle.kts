@@ -1,6 +1,8 @@
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+//    id("kotlin-android-extensions")
 }
 
 android {
@@ -18,7 +20,10 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
     }
+
+
 
     buildTypes {
         release {
@@ -59,6 +64,11 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.camera:camera-lifecycle:1.2.3")
+    implementation("androidx.camera:camera-view:1.2.3")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.8.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
@@ -66,4 +76,33 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+    //权限请求
+    implementation("com.google.accompanist:accompanist-permissions:0.24.12-rc")
+    //加载网络图片
+    implementation("io.coil-kt:coil-compose:2.1.0")
+
+    // CameraX core library
+    val camerax_version = "1.2.1"
+    implementation ("androidx.camera:camera-core:$camerax_version")
+
+    // CameraX Camera2 extensions
+    implementation ("androidx.camera:camera-camera2:$camerax_version")
+
+    // CameraX Lifecycle library
+    implementation ("androidx.camera:camera-lifecycle:$camerax_version")
+
+    // CameraX View class
+    implementation ("androidx.camera:camera-view:$camerax_version")
+
+    // CameraX Video class
+    implementation ("androidx.camera:camera-video:$camerax_version")
+
+    // CameraX Extensions library
+     implementation ("androidx.camera:camera-extensions:$camerax_version")
+
+
+
+
+
+
 }
