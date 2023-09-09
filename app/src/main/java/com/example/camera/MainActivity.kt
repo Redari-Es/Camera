@@ -48,20 +48,35 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContentProviderCompat.requireContext
 import com.example.camera.ui.theme.CameraTheme
 
+
+/*
+Author: Shon(Redari-Es)
+Email: shon@redaries.xyz
+Github: https://github.com/Redari-Es/camera
+* */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             CameraTheme {
+                //实机
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    // 运行
                     CameraXDemo()
                 }
             }
@@ -71,38 +86,44 @@ class MainActivity : ComponentActivity() {
 
 
 
+/*
+启用权限：Permission
+* */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraXDemo() {
     //申请权限
     val permissionsState = rememberMultiplePermissionsState(permissions = listOf(Manifest.permission.CAMERA))
+    // 绑定生命周期
     val lifecycleOwner = LocalLifecycleOwner.current
-    Log.d(TAG, "var life")
+    LogUtil.d(TAG, "var life")
     DisposableEffect(key1 = lifecycleOwner, effect = {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_START) {
                 permissionsState.launchMultiplePermissionRequest()
             }
         }
-        Log.d(TAG, "life2")
+        LogUtil.d(TAG, "life2")
         lifecycleOwner.lifecycle.addObserver(observer)
 
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     })
-
+    // 权限获取UI
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         permissionsState.permissions.forEach { permissionState ->
-            Log.d(TAG, "for permission")
+            LogUtil.d(TAG, "for permission")
             when (permissionState.permission) {
                 Manifest.permission.CAMERA -> {
-                    Log.d(TAG, "permission status")
+                    LogUtil.d(TAG, "permission status")
                     when (permissionState.status) {
                         is PermissionStatus.Granted -> {
-                            Log.i("permissions", "CAMERA Granted")
-                            MyCameraX()//用户同意权限
+                            LogUtil.i("permissions", "CAMERA Granted")
+                            //用户同意权限
+                            MyCameraX()
+                            // 若成功获取权限运行相机
                         }
                         is PermissionStatus.Denied -> {
-                            Log.i("permissions", "CAMERA Denied")
+                            LogUtil.i("permissions", "CAMERA Denied")
                             NoPermissionView(permissionsState)//用户不同意权限
                         }
                     }
@@ -112,141 +133,151 @@ fun CameraXDemo() {
     }
 }
 
-//用户未授予权限时显示的内容
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-private fun NoPermissionView(permissionsState: MultiplePermissionsState) {
-    Log.d(TAG,"show NopermissionView")
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(modifier = Modifier.weight(1f)) {
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextButton(onClick = {
-                permissionsState.launchMultiplePermissionRequest()
-            }) {
-                Text(text = "权限不足，不可使用,点击开启权限")
-            }
 
-        }
+/*
+@Preview
+@Composable
+fun MyCameraXPreview(){
+    CameraTheme(){
+        MyCameraX()
     }
 }
-
-//@Preview
-//@Composable
-//fun MyCameraXPreview(){
-//    CameraTheme(){
-//        MyCameraX()
-//    }
-//}
+ */
 
 @Composable
 private fun MyCameraX() {
-    Log.d("MyCameraX", "START")
+    LogUtil.d("MyCameraX", "START")
     val lifecycleObserver = LocalLifecycleOwner.current//创建生命周期所有者
     val context = LocalContext.current
-    Log.d("MyCameraX", "build lifecycle")
+    LogUtil.d("MyCameraX", "build lifecycle")
     //
     val cameraProviderFuture = remember {
         ProcessCameraProvider.getInstance(context)
     }
-    Log.d("MyCameraX", "ProviederFuture")
+    LogUtil.d("MyCameraX", "ProviederFuture")
     //创建相机预览的视图
+    // previewView
     val previewView = remember {
         PreviewView(context).apply {
             id = R.id.preview_view//指定xml中创建的id
         }
     }
-    Log.d("MyCameraX", "previewView")
+    LogUtil.d("MyCameraX", "previewView")
     //imageCapture是图像捕获用例，提交takePicture函数将图片拍摄到内存或保存到文件,并提供图像原数据
+    // take
+    var takeState by remember {mutableStateOf(false)}
+
+    // imageCapture
     val imageCapture = remember {
         ImageCapture.Builder().build()
     }
+    // videoCapture
 
     //在界面上显示图片,保存uri状态
     val imageUri = remember {
         mutableStateOf<Uri?>(null)
     }
-    Log.d("MyCameraX", "show image")
-
+    LogUtil.d("MyCameraX", "show image")
     val fileUtils: FileUtils by lazy { FileUtilsImpl() }
-    Log.d("MyCameraX", "show app")
-    // error
+    LogUtil.d("MyCameraX", "show app")
+    //  ImageAnalysis
+
+    //设置摄像头，默认使用背面的摄像头
+    val cameraSelector1 = CameraSelector.DEFAULT_BACK_CAMERA
+    val cameraSelector2 = CameraSelector.DEFAULT_FRONT_CAMERA
+    var cameraSelectors by remember {mutableStateOf(cameraSelector1)}
+    var cameraState by remember {mutableStateOf(false)}
+    if (cameraState){
+        cameraSelectors=cameraSelector2
+    }else{
+        cameraSelectors=cameraSelector1
+    }
+
+    // Show Camera UI
     Box(modifier = Modifier.fillMaxSize()) {
+        // 相机视图
         AndroidView(
             factory = { previewView },//添加相机预览视图
             modifier = Modifier.fillMaxSize()
             
         ) {
-
-            Log.d("MyCameraX", "start Listener ")
+            LogUtil.d("MyCameraX", "start Listener ")
             cameraProviderFuture.addListener(
-                {//添加监听器
-                    Log.d("MyCameraX", "add Listener ")
+                {
+                    // cameraselect
+                    //添加监听器
+                    LogUtil.d("MyCameraX", "add Listener ")
                     val cameraProvider:ProcessCameraProvider = cameraProviderFuture.get() //创建cameraProvider
                     //构建相机预览对象
-                    val preview = androidx.camera.core.Preview.Builder().build().also {
-//                        it.setSurfaceProvider(previewView.surfaceProvider)
+                    val preview = androidx.camera.core.Preview.Builder()
+                        .build()
+                        .also {
+                        //it.setSurfaceProvider(previewView.surfaceProvider)
                         it.setSurfaceProvider(previewView.getSurfaceProvider())
                     }
-                    Log.d("MyCameraX", "finish add Listener ")
-                    //设置摄像头，默认使用背面的摄像头
-                    val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-                    Log.d("MyCameraX", "set cameraSelector")
+                    LogUtil.d("MyCameraX", "finish add Listener ")
+                    LogUtil.d("MyCameraX", "set cameraSelector")
                     try {
-                        Log.d("LifeCycle", "start lifeCycle")
+                        LogUtil.d("LifeCycle", "start lifeCycle")
                         //从应用程序的生命周期中，解除所有应用的摄像机绑定，这将关闭所有当前打开的摄像机，并运行在启动时添加摄像机用例
                         cameraProvider.unbindAll()
-                        Log.d("LifeCycle", "unbindAll()")
+                        LogUtil.d("LifeCycle", "unbindAll()")
 
                         //绑定生命周期
                         cameraProvider.bindToLifecycle(
                             lifecycleObserver,
-                            cameraSelector,
+                            cameraSelectors,
                             preview,
                             imageCapture
                         )
-                        Log.d("LifeCycle", "bindToLifecycle()")
+                        LogUtil.d("LifeCycle", "bindToLifecycle()")
                     } catch (e: Exception) {
-                        Log.d("LifeCycle", "erro")
-                        Log.e("Camera", e.toString())
+                        LogUtil.d("LifeCycle", "erro")
+                        LogUtil.e("Camera", e.toString())
                     }
                 },
                 ContextCompat.getMainExecutor(context)//添加到主执行器中
             )
-        }
+        }// end of AndroidView
         //将图像存储到文件中
-
-        Log.d("show", "other")
+        LogUtil.d("show", "other")
+        // 左侧图片栏
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(20.dp)
                 .align(Alignment.BottomCenter),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
+            // row1
             //显示拍照的图片
-            imageUri.value?.let {
+//            imageUri.value?.let { //导致排列错位，由于可为空
+                imageUri.value.let {
+                    if (it==null){
+                        Image(
+                            painter = painterResource(id=R.drawable.album),
+                            contentDescription = "",
+                            modifier = Modifier
+                                .size(50.dp),
+                        )
+                    }else{
                 Image(
                     painter = rememberImagePainter(data = it),
                     contentDescription = "",
-                    modifier = Modifier.size(60.dp)
+                    modifier = Modifier
+                        .size(50.dp),
                 )
+                    }
             }
-            Spacer(modifier = Modifier.width(24.dp))
-
+            Spacer(modifier = Modifier.width(50.dp))
+//            row2
             IconButton(onClick = {
                 fileUtils.createDirectoryIfNotExist(context)
                 val file = fileUtils.createFile(context)
-
                 //用于存储新捕获图像的选项outPutOptions
                 val outputOption = ImageCapture.OutputFileOptions.Builder(file).build()
+                // 调用拍照
                 imageCapture.takePicture(outputOption,
                     ContextCompat.getMainExecutor(context),//调用线程执行器
                     object : ImageCapture.OnImageSavedCallback { //为新捕获的图像调用回调
@@ -255,16 +286,43 @@ private fun MyCameraX() {
                             Toast.makeText(context, saveUri.path, Toast.LENGTH_SHORT).show()
                             imageUri.value = saveUri//设置图像显示路径
                         }
-
                         override fun onError(exception: ImageCaptureException) {
-                            Log.e("Camera", "$exception")
+                            LogUtil.e("Camera", "$exception")
                         }
-
                     }
                 )
-            }) {
-                Text(text = "拍照")
+            },
+                modifier=Modifier.size(100.dp)
+            )
+            {
+                Image(painter= painterResource(id=R.drawable.takephoto),
+                    contentDescription = null,
+//                    tint= Color.White,
+                    modifier=Modifier
+                        .size(120.dp)
+                )
+//                Text(text = "拍照")
             }
+            Spacer(modifier = Modifier.width(50.dp))
+            IconButton(
+                onClick={
+                    if (!cameraState){
+                        cameraState=true
+                    }else{
+                        cameraState=false
+                    }
+                },
+                modifier=Modifier.size(50.dp)
+
+            ){
+                Image(painter=painterResource(id=R.drawable.cameraselector),
+                    contentDescription = null,
+//                    tint=Color.White,
+                    modifier=Modifier
+                        .size(50.dp)
+                )
+            }
+            // end of row
         }
 
     }
@@ -335,4 +393,5 @@ private fun startCamera(){
 }
 
  */
+
 
