@@ -25,7 +25,7 @@ finish
 ### Take Video
 todo
 ### Album
-InProgress
+让图片显示成圆形
 ### 3A
 - AWB
 - AE

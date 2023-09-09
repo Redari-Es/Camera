@@ -39,12 +39,14 @@ import androidx.activity.compose.setContent
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraState
+import androidx.camera.core.ImageAnalysis
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -54,12 +56,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContentProviderCompat.requireContext
 import com.example.camera.ui.theme.CameraTheme
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
+/** Helper type alias used for analysis use case callbacks */
+//typealias LumaListener = (luma: Double) -> Unit
 
 /*
 Author: Shon(Redari-Es)
@@ -67,6 +74,8 @@ Email: shon@redaries.xyz
 Github: https://github.com/Redari-Es/camera
 * */
 class MainActivity : ComponentActivity() {
+    /** Blocking camera operations are performed using this executor */
+    private lateinit var cameraExecutor: ExecutorService
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -75,7 +84,8 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
-                ) {
+                ) // Initialize our background executor
+                {
                     // 运行
                     CameraXDemo()
                 }
@@ -125,6 +135,7 @@ fun CameraXDemo() {
                         is PermissionStatus.Denied -> {
                             LogUtil.i("permissions", "CAMERA Denied")
                             NoPermissionView(permissionsState)//用户不同意权限
+                            // Shut down our background executor
                         }
                     }
                 }
@@ -147,6 +158,7 @@ fun MyCameraXPreview(){
 @Composable
 private fun MyCameraX() {
     LogUtil.d("MyCameraX", "START")
+
     val lifecycleObserver = LocalLifecycleOwner.current//创建生命周期所有者
     val context = LocalContext.current
     LogUtil.d("MyCameraX", "build lifecycle")
@@ -181,7 +193,7 @@ private fun MyCameraX() {
     val fileUtils: FileUtils by lazy { FileUtilsImpl() }
     LogUtil.d("MyCameraX", "show app")
     //  ImageAnalysis
-
+    var cameraExecutor = Executors.newSingleThreadExecutor()
     //设置摄像头，默认使用背面的摄像头
     val cameraSelector1 = CameraSelector.DEFAULT_BACK_CAMERA
     val cameraSelector2 = CameraSelector.DEFAULT_FRONT_CAMERA
@@ -202,8 +214,10 @@ private fun MyCameraX() {
             
         ) {
             LogUtil.d("MyCameraX", "start Listener ")
+            /** Blocking camera operations are performed using this executor */
             cameraProviderFuture.addListener(
                 {
+
                     // cameraselect
                     //添加监听器
                     LogUtil.d("MyCameraX", "add Listener ")
@@ -215,6 +229,15 @@ private fun MyCameraX() {
                         //it.setSurfaceProvider(previewView.surfaceProvider)
                         it.setSurfaceProvider(previewView.getSurfaceProvider())
                     }
+                    // imageAnalyzer
+                    val imageAnalyzer = ImageAnalysis.Builder()
+                        .build()
+                        .also{
+                            it.setAnalyzer(cameraExecutor,LuminosityAnalyzer{ luma:Double ->
+                                LogUtil.d("ImageAnalyzer","Average luminosity:$luma")
+                            })
+                        }
+                    //
                     LogUtil.d("MyCameraX", "finish add Listener ")
                     LogUtil.d("MyCameraX", "set cameraSelector")
                     try {
@@ -228,7 +251,8 @@ private fun MyCameraX() {
                             lifecycleObserver,
                             cameraSelectors,
                             preview,
-                            imageCapture
+                            imageCapture,
+                            imageAnalyzer
                         )
                         LogUtil.d("LifeCycle", "bindToLifecycle()")
                     } catch (e: Exception) {
@@ -262,12 +286,17 @@ private fun MyCameraX() {
                                 .size(50.dp),
                         )
                     }else{
+                        Surface(
+                            shape=CircleShape
+                        ){
                 Image(
                     painter = rememberImagePainter(data = it),
                     contentDescription = "",
                     modifier = Modifier
-                        .size(50.dp),
+                        .size(60.dp),
+                    contentScale= ContentScale.Crop
                 )
+                        }
                     }
             }
             Spacer(modifier = Modifier.width(50.dp))
@@ -393,5 +422,11 @@ private fun startCamera(){
 }
 
  */
-
+object def {
+    private const val TAG = "Camera"
+    private const val FILENAME = "yyyy-MM-dd-HH-mm-ss-SSS"
+    private const val PHOTO_TYPE = "image/jpeg"
+    private const val RATIO_4_3_VALUE = 4.0 / 3.0
+    private const val RATIO_16_9_VALUE = 16.0 / 9.0
+}
 
