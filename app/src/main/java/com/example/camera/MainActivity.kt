@@ -1,11 +1,11 @@
 package com.example.camera
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
-import android.util.Log
 import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -29,16 +29,13 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import coil.compose.rememberImagePainter
-import com.example.camera.R
 import com.google.accompanist.permissions.*
 import java.io.File
 
 import android.os.Bundle
+import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.camera.core.Camera
-import androidx.camera.core.CameraInfo
-import androidx.camera.core.CameraState
 import androidx.camera.core.ImageAnalysis
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -49,19 +46,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.core.content.ContentProviderCompat.requireContext
+import com.example.camera.analyzer.LuminosityAnalyzer
+import com.example.camera.bottom.CameraSelectors
+import com.example.camera.bottom.ImageCaptures
+import com.example.camera.top.TopTools
 import com.example.camera.ui.theme.CameraTheme
+import com.example.camera.util.LogUtil
+import com.example.camera.util.NoPermissionView
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -71,6 +67,7 @@ import java.util.concurrent.Executors
 /*
 Author: Shon(Redari-Es)
 Email: shon@redaries.xyz
+ProjectName: The Monster Camera - 怪物卡美啦
 Github: https://github.com/Redari-Es/camera
 * */
 class MainActivity : ComponentActivity() {
@@ -155,6 +152,7 @@ fun MyCameraXPreview(){
 }
  */
 
+@SuppressLint("UnrememberedMutableState")
 @Composable
 private fun MyCameraX() {
     LogUtil.d("MyCameraX", "START")
@@ -174,36 +172,19 @@ private fun MyCameraX() {
             id = R.id.preview_view//指定xml中创建的id
         }
     }
-    LogUtil.d("MyCameraX", "previewView")
     //imageCapture是图像捕获用例，提交takePicture函数将图片拍摄到内存或保存到文件,并提供图像原数据
-    // take
-    var takeState by remember {mutableStateOf(false)}
-
     // imageCapture
-    val imageCapture = remember {
-        ImageCapture.Builder().build()
+    val images = ImageCaptures(context)
+    var imageGetCapture by remember {mutableStateOf(images.first)}
+    var imageUri by remember {
+        mutableStateOf<Uri?>(images.second.value)
     }
-    // videoCapture
-
-    //在界面上显示图片,保存uri状态
-    val imageUri = remember {
-        mutableStateOf<Uri?>(null)
-    }
-    LogUtil.d("MyCameraX", "show image")
-    val fileUtils: FileUtils by lazy { FileUtilsImpl() }
-    LogUtil.d("MyCameraX", "show app")
+//    val fileUtils: FileUtils by lazy { FileUtilsImpl() }
+//    LogUtil.d("MyCameraX", "show app")
     //  ImageAnalysis
     var cameraExecutor = Executors.newSingleThreadExecutor()
-    //设置摄像头，默认使用背面的摄像头
-    val cameraSelector1 = CameraSelector.DEFAULT_BACK_CAMERA
-    val cameraSelector2 = CameraSelector.DEFAULT_FRONT_CAMERA
-    var cameraSelectors by remember {mutableStateOf(cameraSelector1)}
-    var cameraState by remember {mutableStateOf(false)}
-    if (cameraState){
-        cameraSelectors=cameraSelector2
-    }else{
-        cameraSelectors=cameraSelector1
-    }
+//    var cameraSelectors by remember {mutableStateOf(CameraSelector.DEFAULT_BACK_CAMERA)}
+    var cameraGetSelectors by remember {mutableStateOf(CameraSelector.DEFAULT_BACK_CAMERA)}
 
     // Show Camera UI
     Box(modifier = Modifier.fillMaxSize()) {
@@ -233,7 +214,7 @@ private fun MyCameraX() {
                     val imageAnalyzer = ImageAnalysis.Builder()
                         .build()
                         .also{
-                            it.setAnalyzer(cameraExecutor,LuminosityAnalyzer{ luma:Double ->
+                            it.setAnalyzer(cameraExecutor, LuminosityAnalyzer{ luma:Double ->
                                 LogUtil.d("ImageAnalyzer","Average luminosity:$luma")
                             })
                         }
@@ -249,9 +230,12 @@ private fun MyCameraX() {
                         //绑定生命周期
                         cameraProvider.bindToLifecycle(
                             lifecycleObserver,
-                            cameraSelectors,
+//                            cameraSelectors,
+                            cameraGetSelectors,
                             preview,
-                            imageCapture,
+//                            imageCapture,
+                            imageGetCapture,
+//                            imageGetCapture,
                             imageAnalyzer
                         )
                         LogUtil.d("LifeCycle", "bindToLifecycle()")
@@ -263,9 +247,11 @@ private fun MyCameraX() {
                 ContextCompat.getMainExecutor(context)//添加到主执行器中
             )
         }// end of AndroidView
-        //将图像存储到文件中
-        LogUtil.d("show", "other")
-        // 左侧图片栏
+        // 头部工具栏
+        TopTools()
+        LogUtil.d("show", "TopTools")
+        // 底部工具栏
+//        cameraGetSelector=  BottomTools(context)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -277,7 +263,10 @@ private fun MyCameraX() {
             // row1
             //显示拍照的图片
 //            imageUri.value?.let { //导致排列错位，由于可为空
-                imageUri.value.let {
+//            /*
+//                imageUri.value.let {
+                    imageUri.let {
+//                images.second.value.let {
                     if (it==null){
                         Image(
                             painter = painterResource(id=R.drawable.album),
@@ -299,60 +288,47 @@ private fun MyCameraX() {
                         }
                     }
             }
+
             Spacer(modifier = Modifier.width(50.dp))
 //            row2
-            IconButton(onClick = {
-                fileUtils.createDirectoryIfNotExist(context)
-                val file = fileUtils.createFile(context)
-                //用于存储新捕获图像的选项outPutOptions
-                val outputOption = ImageCapture.OutputFileOptions.Builder(file).build()
-                // 调用拍照
-                imageCapture.takePicture(outputOption,
-                    ContextCompat.getMainExecutor(context),//调用线程执行器
-                    object : ImageCapture.OnImageSavedCallback { //为新捕获的图像调用回调
-                        override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                            val saveUri = Uri.fromFile(file)//保存的图像地址
-                            Toast.makeText(context, saveUri.path, Toast.LENGTH_SHORT).show()
-                            imageUri.value = saveUri//设置图像显示路径
-                        }
-                        override fun onError(exception: ImageCaptureException) {
-                            LogUtil.e("Camera", "$exception")
-                        }
-                    }
-                )
-            },
-                modifier=Modifier.size(100.dp)
-            )
-            {
-                Image(painter= painterResource(id=R.drawable.takephoto),
-                    contentDescription = null,
-//                    tint= Color.White,
-                    modifier=Modifier
-                        .size(120.dp)
-                )
-//                Text(text = "拍照")
-            }
+//            IconButton(onClick = {
+//                fileUtils.createDirectoryIfNotExist(context)
+//                val file = fileUtils.createFile(context)
+//                //用于存储新捕获图像的选项outPutOptions
+//                val outputOption = ImageCapture.OutputFileOptions.Builder(file).build()
+//                // 调用拍照
+//                imageCapture.takePicture(outputOption,
+//                    ContextCompat.getMainExecutor(context),//调用线程执行器
+//                    object : ImageCapture.OnImageSavedCallback { //为新捕获的图像调用回调
+//                        override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+//                            val saveUri = Uri.fromFile(file)//保存的图像地址
+//                            Toast.makeText(context, saveUri.path, Toast.LENGTH_SHORT).show()
+//                            imageUri.value = saveUri//设置图像显示路径
+//                        }
+//                        override fun onError(exception: ImageCaptureException) {
+//                            LogUtil.e("Camera", "$exception")
+//                        }
+//                    }
+//                )
+//            },
+//                modifier=Modifier.size(100.dp)
+//            )
+//            {
+//                Image(painter= painterResource(id=R.drawable.takephoto),
+//                    contentDescription = null,
+////                    tint= Color.White,
+//                    modifier=Modifier
+//                        .size(120.dp)
+//                )
+////                Text(text = "拍照")
+//            }
+             val images= ImageCaptures(context)
+            imageGetCapture=images.first
+            imageUri=images.second.value
             Spacer(modifier = Modifier.width(50.dp))
-            IconButton(
-                onClick={
-                    if (!cameraState){
-                        cameraState=true
-                    }else{
-                        cameraState=false
-                    }
-                },
-                modifier=Modifier.size(50.dp)
-
-            ){
-                Image(painter=painterResource(id=R.drawable.cameraselector),
-                    contentDescription = null,
-//                    tint=Color.White,
-                    modifier=Modifier
-                        .size(50.dp)
-                )
-            }
-            // end of row
-        }
+            // changeCamera
+          cameraGetSelectors = CameraSelectors()
+        } // end of row
 
     }
 }

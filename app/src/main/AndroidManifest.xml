@@ -10,7 +10,8 @@
     <uses-feature android:name="android.hardware.camera" /> <!-- Declare permissions -->
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" /> <!-- Enable instant app support -->
+        android:maxSdkVersion="34" /> <!-- Enable instant app support -->
+<!--        android:maxSdkVersion="28" /> &lt;!&ndash; Enable instant app support &ndash;&gt;-->
     <dist:module dist:instant="true" /> <!-- Declare features -->
 
     <application

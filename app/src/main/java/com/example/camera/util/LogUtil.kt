@@ -1,4 +1,4 @@
-package com.example.camera
+package com.example.camera.util
 
 import android.util.Log
 
@@ -12,28 +12,28 @@ object LogUtil{
     private var level = VERBOSE
 
     fun v(tag:String,msg:String){
-        if (level<= VERBOSE){
+        if (level <= VERBOSE){
             Log.v(tag,msg)
         }
     }
 
     fun d(tag:String,msg:String){
-        if (level<= DEBUG){
+        if (level <= DEBUG){
             Log.d(tag,msg)
         }
     }
     fun i(tag:String,msg:String){
-        if (level<= INFO){
+        if (level <= INFO){
             Log.i(tag,msg)
         }
     }
     fun w(tag:String,msg:String){
-        if (level<= WARN){
+        if (level <= WARN){
             Log.w(tag,msg)
         }
     }
     fun e(tag:String,msg:String){
-        if (level<= ERROR){
+        if (level <= ERROR){
             Log.e(tag,msg)
         }
     }
