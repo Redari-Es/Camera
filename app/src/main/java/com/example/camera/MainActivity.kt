@@ -3,16 +3,10 @@ package com.example.camera
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ContentValues.TAG
-import android.content.Context
 import android.net.Uri
-import android.os.Environment
-import android.widget.Toast
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -28,12 +22,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import coil.compose.rememberImagePainter
 import com.google.accompanist.permissions.*
-import java.io.File
 
 import android.os.Bundle
-import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.camera.core.ImageAnalysis
@@ -42,18 +33,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import com.example.camera.analyzer.LuminosityAnalyzer
 import com.example.camera.bottom.CameraSelectors
 import com.example.camera.bottom.ImageCaptures
+import com.example.camera.bottom.ImageUris
 import com.example.camera.top.TopTools
 import com.example.camera.ui.theme.CameraTheme
 import com.example.camera.util.LogUtil
@@ -188,18 +175,17 @@ private fun MyCameraX() {
 
     // Show Camera UI
     Box(modifier = Modifier.fillMaxSize()) {
-        // 相机视图
+        LogUtil.d(TAG,"Start The Monster Camera UI")
         AndroidView(
             factory = { previewView },//添加相机预览视图
             modifier = Modifier.fillMaxSize()
             
         ) {
+            LogUtil.d(TAG,"Start of AndroidView")
             LogUtil.d("MyCameraX", "start Listener ")
             /** Blocking camera operations are performed using this executor */
             cameraProviderFuture.addListener(
                 {
-
-                    // cameraselect
                     //添加监听器
                     LogUtil.d("MyCameraX", "add Listener ")
                     val cameraProvider:ProcessCameraProvider = cameraProviderFuture.get() //创建cameraProvider
@@ -220,38 +206,33 @@ private fun MyCameraX() {
                         }
                     //
                     LogUtil.d("MyCameraX", "finish add Listener ")
-                    LogUtil.d("MyCameraX", "set cameraSelector")
                     try {
                         LogUtil.d("LifeCycle", "start lifeCycle")
                         //从应用程序的生命周期中，解除所有应用的摄像机绑定，这将关闭所有当前打开的摄像机，并运行在启动时添加摄像机用例
                         cameraProvider.unbindAll()
                         LogUtil.d("LifeCycle", "unbindAll()")
-
                         //绑定生命周期
                         cameraProvider.bindToLifecycle(
                             lifecycleObserver,
-//                            cameraSelectors,
                             cameraGetSelectors,
                             preview,
-//                            imageCapture,
                             imageGetCapture,
-//                            imageGetCapture,
                             imageAnalyzer
                         )
-                        LogUtil.d("LifeCycle", "bindToLifecycle()")
+                        LogUtil.d(TAG, "bindToLifecycle()")
                     } catch (e: Exception) {
-                        LogUtil.d("LifeCycle", "erro")
-                        LogUtil.e("Camera", e.toString())
+                        LogUtil.d(TAG,"BindTOLifecycle() Error")
+                        LogUtil.e(TAG, e.toString())
                     }
                 },
                 ContextCompat.getMainExecutor(context)//添加到主执行器中
             )
-        }// end of AndroidView
-        // 头部工具栏
+        }
+        LogUtil.d(TAG,"End of AndroidView")
+        LogUtil.d(TAG,"Loading TopTools")
         TopTools()
-        LogUtil.d("show", "TopTools")
-        // 底部工具栏
-//        cameraGetSelector=  BottomTools(context)
+        LogUtil.d(TAG,"Show TopTools")
+        LogUtil.d(TAG,"Loading BottomTools")
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -260,122 +241,29 @@ private fun MyCameraX() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            // row1
-            //显示拍照的图片
-//            imageUri.value?.let { //导致排列错位，由于可为空
-//            /*
-//                imageUri.value.let {
-                    imageUri.let {
-//                images.second.value.let {
-                    if (it==null){
-                        Image(
-                            painter = painterResource(id=R.drawable.album),
-                            contentDescription = "",
-                            modifier = Modifier
-                                .size(50.dp),
-                        )
-                    }else{
-                        Surface(
-                            shape=CircleShape
-                        ){
-                Image(
-                    painter = rememberImagePainter(data = it),
-                    contentDescription = "",
-                    modifier = Modifier
-                        .size(60.dp),
-                    contentScale= ContentScale.Crop
-                )
-                        }
-                    }
-            }
-
+            LogUtil.d(TAG,"Row1 - Loading the imageUri")
+            ImageUris(imageUri)
             Spacer(modifier = Modifier.width(50.dp))
-//            row2
-//            IconButton(onClick = {
-//                fileUtils.createDirectoryIfNotExist(context)
-//                val file = fileUtils.createFile(context)
-//                //用于存储新捕获图像的选项outPutOptions
-//                val outputOption = ImageCapture.OutputFileOptions.Builder(file).build()
-//                // 调用拍照
-//                imageCapture.takePicture(outputOption,
-//                    ContextCompat.getMainExecutor(context),//调用线程执行器
-//                    object : ImageCapture.OnImageSavedCallback { //为新捕获的图像调用回调
-//                        override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-//                            val saveUri = Uri.fromFile(file)//保存的图像地址
-//                            Toast.makeText(context, saveUri.path, Toast.LENGTH_SHORT).show()
-//                            imageUri.value = saveUri//设置图像显示路径
-//                        }
-//                        override fun onError(exception: ImageCaptureException) {
-//                            LogUtil.e("Camera", "$exception")
-//                        }
-//                    }
-//                )
-//            },
-//                modifier=Modifier.size(100.dp)
-//            )
-//            {
-//                Image(painter= painterResource(id=R.drawable.takephoto),
-//                    contentDescription = null,
-////                    tint= Color.White,
-//                    modifier=Modifier
-//                        .size(120.dp)
-//                )
-////                Text(text = "拍照")
-//            }
+            LogUtil.d(TAG,"Row2 - Loading ImageCaputre")
              val images= ImageCaptures(context)
             imageGetCapture=images.first
             imageUri=images.second.value
             Spacer(modifier = Modifier.width(50.dp))
-            // changeCamera
+            LogUtil.d(TAG,"Row2 - Loading ChangeCameraSelectors")
           cameraGetSelectors = CameraSelectors()
         } // end of row
-
     }
 }
 
-
-interface FileUtils {
-    //创建文件目录
-    fun createDirectoryIfNotExist(context: Context)
-
-    //创建文件
-    fun createFile(context: Context): File
-}
-
-class FileUtilsImpl : FileUtils {
-    companion object {
-        private const val IMAGE_PREFIX = "Image_"
-        private const val JPG_SUFFIX = ".jpg"
-        private const val FOLDER_NAME = "Photo"
-    }
-
-    override fun createDirectoryIfNotExist(context: Context) {
-        val folder = File(
-            "${context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absoluteFile}"
-                    + File.separator
-                    + FOLDER_NAME
-        )
-        if (!folder.exists()) {
-            folder.mkdir()
-        }
-    }
-
-    override fun createFile(context: Context) = File(
-        "${context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absoluteFile}"
-                + File.separator + FOLDER_NAME + File.separator + IMAGE_PREFIX + System.currentTimeMillis() + JPG_SUFFIX
-    )
-
-}
-
-// startCamera()
 /*
+ startCamera() Offical Sample
 private fun startCamera(){
     val cameraProviderFuture=ProcessCameraProvider.getInstance(this)
     cameraProviderFuture.addListener(Runnable{
         // Used to bind the lifecycle of cameras to the lifecycle owner
         val cameraProvider: ProcessCameraProvider=cameraProviderFutrue.get()
         // Preview
-        
+
         val preview = Preview.Builder()
             .build()
             .also{
@@ -396,10 +284,10 @@ private fun startCamera(){
     },
         ContextCompat.getMainExecutor(this))
 }
-
  */
+
 object def {
-    private const val TAG = "Camera"
+    private const val TAG = "Monster of Camera"
     private const val FILENAME = "yyyy-MM-dd-HH-mm-ss-SSS"
     private const val PHOTO_TYPE = "image/jpeg"
     private const val RATIO_4_3_VALUE = 4.0 / 3.0
