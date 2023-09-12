@@ -47,6 +47,7 @@ import com.example.camera.analyzer.LuminosityAnalyzer
 import com.example.camera.bottom.CameraSelectors
 import com.example.camera.bottom.ImageCaptures
 import com.example.camera.bottom.ImageUris
+import com.example.camera.page.Album
 import com.example.camera.page.LoadingPage
 import com.example.camera.page.PageStates
 import com.example.camera.top.TopTools
@@ -269,24 +270,31 @@ fun MyCameraX() {
         PageStates("TopTools")
         LogUtil.d(TAG,"Show TopTools")
         LogUtil.d(TAG,"Loading BottomTools")
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                // 设置其他页全屏
+//                .padding(20.dp)
                 .align(Alignment.BottomCenter),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
+//            verticalAlignment = Alignment.CenterVertically,
+//            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            LogUtil.d(TAG,"Row1 - Loading the imageUri")
-            ImageUris(imageUri)
+            LogUtil.d(TAG,"Row2 - Loading ChangeCameraSelectors")
+            cameraGetSelectors = CameraSelectors()
             Spacer(modifier = Modifier.width(50.dp))
             LogUtil.d(TAG,"Row2 - Loading ImageCaputre")
              val images= ImageCaptures(context)
             imageGetCapture=images.first
             imageUri=images.second.value
             Spacer(modifier = Modifier.width(50.dp))
-            LogUtil.d(TAG,"Row2 - Loading ChangeCameraSelectors")
-          cameraGetSelectors = CameraSelectors()
+            LogUtil.d(TAG,"Row0 - Loading the imageUri")
+           var showAlbum= ImageUris(imageUri)
+//            Album(imageUri,showAlbum)
+            when(showAlbum){
+                true->Album(imageUri,showAlbum)
+                false->Album(imageUri,showAlbum)
+            }
+
         } // end of row
     }
 }

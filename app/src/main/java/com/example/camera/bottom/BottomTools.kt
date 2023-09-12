@@ -8,6 +8,12 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,53 +25,78 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import coil.compose.rememberImagePainter
 import com.example.camera.R
+import com.example.camera.page.Album
 import com.example.camera.util.LogUtil
 import java.io.File
 
 
 // BottomRow1
+@Preview(showBackground=true)
 @Composable
-fun ImageUris(imageUri: Uri?){
+fun ImageUris(imageUri: Uri?):Boolean{
     //显示拍照的图片
 //            imageUri.value?.let { //导致排列错位，由于可为空
 //            /*
 //                imageUri.value.let {
+    var change by remember{mutableStateOf(false)}
+    var click by remember{mutableStateOf(0)}
+//    Album(imageUri)
+    Box(
+        modifier=Modifier.fillMaxSize()
+            .padding(25.dp)
+//            .background(Color.Black)
+    ){
     imageUri.let {
 //                images.second.value.let {
-        if (it==null){
-            Image(
-                painter = painterResource(id=R.drawable.album),
-                contentDescription = "",
-                modifier = Modifier
-                    .size(60.dp),
-            )
-        }else{
-            Surface(
-//                shape=CircleShape
-//                        shape=RectangleShape
-                        shape= RoundedCornerShape(14.dp)
-            ){
+        IconButton(
+            onClick = {
+                      change=!change
+            },
+            modifier = Modifier.size(60.dp)
+                .align(Alignment.BottomStart))
+        {
+            if (it == null) {
                 Image(
-                    painter = rememberImagePainter(data = it),
+                    painter = painterResource(id = R.drawable.album),
                     contentDescription = "",
                     modifier = Modifier
-                        .size(60.dp),
-                    contentScale= ContentScale.Crop
+                        .size(60.dp)
+                        .align(Alignment.BottomStart),
                 )
+            } else {
+                Surface(
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Image(
+                        painter = rememberImagePainter(data = it),
+                        contentDescription = "",
+                        modifier = Modifier
+                            .size(60.dp)
+                            .align(Alignment.BottomStart),
+                        contentScale = ContentScale.Crop
+                    )
+                }
             }
         }
     }
+    }
+    return change
+//    return imageUri
 }
 
 // BottomRow2
+//@Preview(showBackground=true)
 @Composable
 fun ImageCaptures(context:Context): Pair<ImageCapture, MutableState<Uri?>>{
 //    fun ImageCaptures(context:Context):Result{
@@ -81,6 +112,10 @@ fun ImageCaptures(context:Context): Pair<ImageCapture, MutableState<Uri?>>{
     }
     val fileUtils: com.example.camera.bottom.FileUtils by lazy { FileUtilsImpl() }
     // row1 //设置摄像头，默认使用背面的摄像头
+    Box(
+        modifier=Modifier.fillMaxSize()
+            .padding(10.dp)
+    ){
     IconButton(onClick = {
         fileUtils.createDirectoryIfNotExist(context)
         val file = fileUtils.createFile(context)
@@ -102,12 +137,15 @@ fun ImageCaptures(context:Context): Pair<ImageCapture, MutableState<Uri?>>{
         )
     },
         modifier=Modifier.size(100.dp)
+            .align(Alignment.BottomCenter),
     ) {
         Image(painter= painterResource(id=R.drawable.takephoto),
             contentDescription = null,
             modifier=Modifier
                 .size(120.dp)
+                .align(Alignment.BottomCenter),
         )
+    }
     }
     return Pair(imageCapture, imageGetUri)
 }// end
@@ -124,17 +162,26 @@ fun CameraSelectors():CameraSelector{
     }else{
         cameraSelectors=cameraSelector1
     }
-    IconButton(
-        onClick={
-            cameraState=!cameraState
-        },
-        modifier= Modifier.size(60.dp)
-    ){
-        Image(painter= painterResource(id= R.drawable.cameraselector),
-            contentDescription = null,
-            modifier= Modifier
-                .size(60.dp)
-        )
+    Box(
+        modifier=Modifier.fillMaxSize()
+            .padding(25.dp)
+//            .background(Color.Black)
+    ) {
+        IconButton(
+            onClick = {
+                cameraState = !cameraState
+            },
+            modifier = Modifier.size(60.dp)
+                .align(Alignment.BottomEnd),
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.cameraselector),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(60.dp)
+                    .align(Alignment.BottomEnd),
+            )
+        }
     }
 return cameraSelectors
 }
