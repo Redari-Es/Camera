@@ -28,6 +28,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.camera.core.ImageAnalysis
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,6 +47,8 @@ import com.example.camera.analyzer.LuminosityAnalyzer
 import com.example.camera.bottom.CameraSelectors
 import com.example.camera.bottom.ImageCaptures
 import com.example.camera.bottom.ImageUris
+import com.example.camera.page.LoadingPage
+import com.example.camera.page.PageStates
 import com.example.camera.top.TopTools
 import com.example.camera.ui.theme.CameraTheme
 import com.example.camera.util.LogUtil
@@ -51,11 +59,14 @@ import java.util.concurrent.Executors
 /** Helper type alias used for analysis use case callbacks */
 //typealias LumaListener = (luma: Double) -> Unit
 
+
 /*
+Copyright (Shon)
 Author: Shon(Redari-Es)
 Email: shon@redaries.xyz
 ProjectName: The Monster Camera - 怪物卡美啦
 Github: https://github.com/Redari-Es/camera
+
 * */
 class MainActivity : ComponentActivity() {
     /** Blocking camera operations are performed using this executor */
@@ -70,6 +81,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) // Initialize our background executor
                 {
+//                    PageStates("cameraXDemo")
                     // 运行
                     CameraXDemo()
                 }
@@ -113,7 +125,12 @@ fun CameraXDemo() {
                         is PermissionStatus.Granted -> {
                             LogUtil.i("permissions", "CAMERA Granted")
                             //用户同意权限
-                            MyCameraX()
+                            // 加载页
+//                             PageStates("LoadingPage")
+//                            PageStates(nextpage)
+
+                            PageStates("MyCameraX")
+//                            MyCameraX()
                             // 若成功获取权限运行相机
                         }
                         is PermissionStatus.Denied -> {
@@ -141,7 +158,7 @@ fun MyCameraXPreview(){
 
 @SuppressLint("UnrememberedMutableState")
 @Composable
-private fun MyCameraX() {
+fun MyCameraX() {
     LogUtil.d("MyCameraX", "START")
 
     val lifecycleObserver = LocalLifecycleOwner.current//创建生命周期所有者
@@ -172,13 +189,31 @@ private fun MyCameraX() {
     var cameraExecutor = Executors.newSingleThreadExecutor()
 //    var cameraSelectors by remember {mutableStateOf(CameraSelector.DEFAULT_BACK_CAMERA)}
     var cameraGetSelectors by remember {mutableStateOf(CameraSelector.DEFAULT_BACK_CAMERA)}
-
+    var androidview by remember{mutableStateOf(true)}
+    AnimatedVisibility(
+        visible=androidview,
+        enter=fadeIn(
+            animationSpec = tween(
+                durationMillis = 1200,
+                delayMillis = 50,
+                easing = LinearOutSlowInEasing
+            )
+        ),
+        exit=fadeOut(
+            animationSpec = tween(
+                durationMillis = 1200,
+                delayMillis = 50,
+                easing = LinearOutSlowInEasing
+            )
+        ),
+    ){
     // Show Camera UI
     Box(modifier = Modifier.fillMaxSize()) {
         LogUtil.d(TAG,"Start The Monster Camera UI")
         AndroidView(
             factory = { previewView },//添加相机预览视图
             modifier = Modifier.fillMaxSize()
+
             
         ) {
             LogUtil.d(TAG,"Start of AndroidView")
@@ -230,7 +265,8 @@ private fun MyCameraX() {
         }
         LogUtil.d(TAG,"End of AndroidView")
         LogUtil.d(TAG,"Loading TopTools")
-        TopTools()
+//        TopTools()
+        PageStates("TopTools")
         LogUtil.d(TAG,"Show TopTools")
         LogUtil.d(TAG,"Loading BottomTools")
         Row(
@@ -254,7 +290,7 @@ private fun MyCameraX() {
         } // end of row
     }
 }
-
+}
 /*
  startCamera() Offical Sample
 private fun startCamera(){

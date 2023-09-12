@@ -10,6 +10,7 @@ import androidx.camera.core.ImageCaptureException
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -19,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -47,7 +49,9 @@ fun ImageUris(imageUri: Uri?){
             )
         }else{
             Surface(
-                shape=CircleShape
+//                shape=CircleShape
+//                        shape=RectangleShape
+                        shape= RoundedCornerShape(14.dp)
             ){
                 Image(
                     painter = rememberImagePainter(data = it),
@@ -98,15 +102,12 @@ fun ImageCaptures(context:Context): Pair<ImageCapture, MutableState<Uri?>>{
         )
     },
         modifier=Modifier.size(100.dp)
-    )
-    {
+    ) {
         Image(painter= painterResource(id=R.drawable.takephoto),
             contentDescription = null,
-//                    tint= Color.White,
             modifier=Modifier
                 .size(120.dp)
         )
-//                Text(text = "拍照")
     }
     return Pair(imageCapture, imageGetUri)
 }// end
