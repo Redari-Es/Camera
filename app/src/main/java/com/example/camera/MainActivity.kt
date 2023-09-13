@@ -285,7 +285,7 @@ fun MyCameraX() {
                         .build()
                         .also{
                             it.setAnalyzer(cameraExecutor, LuminosityAnalyzer{ luma:Double ->
-//                                LogUtil.d("ImageAnalyzer","Average luminosity:$luma")
+                                LogUtil.d("ImageAnalyzer","Average luminosity:$luma")
                             })
                         }
                     // 3A
