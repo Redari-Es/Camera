@@ -1,10 +1,18 @@
 package com.example.camera.top
 
+import android.content.ContentValues
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.DisplayOrientedMeteringPointFactory
+import androidx.camera.core.FocusMeteringAction
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
 import androidx.compose.material3.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -15,11 +23,24 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import com.example.camera.Mode
 import com.example.camera.R
+import com.example.camera.ToolsMode
+import com.example.camera.analyzer.LuminosityAnalyzer
+import com.example.camera.bottom.CameraSelectors
+import com.example.camera.cameraSelects
+import com.example.camera.modeStatus
+import com.example.camera.modes
 import com.example.camera.ui.theme.CameraTheme
+import com.example.camera.util.LogUtil
+import kotlinx.coroutines.processNextEventInCurrentThread
+import java.util.concurrent.TimeUnit
 
 //var lineState by remember {mutableStateOf(false)}
 @Preview(showBackground =false)
@@ -31,8 +52,80 @@ fun TopToolsPreview(){
     }
 }
 
+
+
 @Composable
 fun TopTools(){
+    val lifecycleObserver = LocalLifecycleOwner.current//创建生命周期所有者
+    val context = LocalContext.current
+    val cameraProviderFuture = remember {
+        ProcessCameraProvider.getInstance(context)
+    }
+    val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+    val previewView = remember {
+        PreviewView(context).apply {
+            id = R.id.preview_view//指定xml中创建的id
+        }
+    }
+//    var Selectors = CameraSelectors()
+//    var cameraGetSelectors by remember {mutableStateOf(cameraSelects)}
+    cameraProviderFuture.addListener(
+        {
+            //添加监听器
+            LogUtil.d("flashmode", "Flash Testing ")
+            val cameraProvider:ProcessCameraProvider = cameraProviderFuture.get() //创建cameraProvider
+            //构建相机预览对象
+            val preview = androidx.camera.core.Preview.Builder()
+                .build()
+                .also {
+                    it.setSurfaceProvider(previewView.getSurfaceProvider())
+                }
+            try {
+                //绑定生命周期
+                val camera= cameraProvider.bindToLifecycle(
+                    lifecycleObserver,
+//                    cameraGetSelectors,
+                    cameraSelects,
+                    preview,
+                )
+                val cameraControl=camera.cameraControl
+                val cameraInfo=camera.cameraInfo
+                // flash
+//                when(modeStatus){
+//                    0-> cameraControl.enableTorch(true)
+//                    1-> cameraControl.enableTorch(false)
+//                }
+//                        cameraControl.enableTorch(true)
+//                         */
+            } catch (e: Exception) {
+                LogUtil.d(ContentValues.TAG,"BindTOLifecycle() Error")
+                LogUtil.e(ContentValues.TAG, e.toString())
+            }
+            cameraProvider.unbind(preview)
+            LogUtil.d("flashmode", "Flash Ending ")
+        },
+        ContextCompat.getMainExecutor(context)//添加到主执行器中
+    )
+    var flashmode by remember {mutableStateOf(false)}
+    var hdrmode by remember {mutableStateOf(false)}
+    when(flashmode){
+        false->modeStatus=0
+        true->modeStatus=1
+    }
+//    LogUtil.d("flashmode","-------------$modeStatus-------------")
+    LogUtil.d("flashmode","-------------START-------------")
+//    val modes by remember {
+//        mutableStateOf(ToolsMode(mutableStateOf(false),mutableStateOf(false)))
+////        mutableStateOf(mode)
+//    }
+//    var modes=ToolsMode
+//    var modes=Mode()
+    var modes = ToolsMode(flashmode,hdrmode)
+//    val modes by remember{mutableStateOf(mode)}
+//    var modes=mode
+//    var mode =modes
+    LogUtil.d("flashmode","Now is $modes")
+//    LogUtil.d("flashmode","$mode")
     // Guids
     var showLines by remember {mutableStateOf(R.drawable.grid0)}
     when(showLines){
@@ -46,9 +139,13 @@ fun TopTools(){
     var showflash by remember {mutableStateOf(R.drawable.flash0)}
     when(showflash){
         0->showflash=R.drawable.flash0
-        R.drawable.flash0->Unit
-        R.drawable.flash1->Unit
+//        R.drawable.flash0-> modes.flash.value=false
+        R.drawable.flash0-> flashmode=false
+        R.drawable.flash1->flashmode=true
     }
+    LogUtil.d("flash", "click set flash $modes")
+//    LogUtil.d("flash", "click set flash $mode")
+    LogUtil.d("flashmode","-------------END-------------")
     // flashlight
     var showflashlight by remember {mutableStateOf(R.drawable.flashlight0)}
     when(showflashlight){
@@ -64,10 +161,21 @@ fun TopTools(){
         R.drawable.video_recorder0->Unit
         R.drawable.video_recorder1->Unit
     }
+    // scale
+    var showScale by remember {mutableStateOf(R.drawable.scale0)}
+    when(showScale){
+        0->showScale=R.drawable.scale0
+        R.drawable.scale0->Unit
+        R.drawable.scale1->Unit
+        R.drawable.scale2->Unit
+        R.drawable.scale3->Unit
+    }
     // HDR
-    var showhdr by remember {mutableStateOf(R.drawable.hdr0)}
-    when(showhdr){
-        0->showhdr=R.drawable.hdr0
+    var showHdr by remember {mutableStateOf(R.drawable.hdr0)}
+    when(showHdr){
+        0->showHdr=R.drawable.hdr0
+//        R.drawable.hdr0-> modes.hdr.value=false
+//        R.drawable.hdr1->modes.hdr.value=true
         R.drawable.hdr0->Unit
         R.drawable.hdr1->Unit
     }
@@ -97,7 +205,7 @@ fun TopTools(){
     when(showml){
         0->showml=R.drawable.ml0
         R.drawable.ml0->Unit
-        R.drawable.ml1->Unit
+        R.drawable.ml1->Unit//MLkit()
     }
     // shake
     var showshake by remember {mutableStateOf(R.drawable.shake0)}
@@ -206,18 +314,41 @@ fun TopTools(){
                     }
                     Spacer(modifier = Modifier.width(40.dp))
                 }
-                // Hdr
+
                 item{
                     IconButton(
                         onClick={
-                            when(showhdr){
-                                R.drawable.hdr0->showhdr=R.drawable.hdr1
-                                R.drawable.hdr1->showhdr=0
+                            when(showScale){
+                                R.drawable.scale0->showScale=R.drawable.scale1
+                                R.drawable.scale1->showScale=R.drawable.scale2
+                                R.drawable.scale2->showScale=R.drawable.scale3
+                                R.drawable.scale3->showScale=0
+
                             }
                         },
                         modifier=Modifier.size(50.dp)
                     ){
-                        Image(painter= painterResource(id=showhdr),
+                        Image(painter= painterResource(id= showScale),
+                            contentDescription = "GuideLine",
+                            modifier= Modifier
+                                .size(40.dp)
+                                .alpha(defalpha)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(40.dp))
+                }
+                // Hdr
+                item{
+                    IconButton(
+                        onClick={
+                            when(showHdr){
+                                R.drawable.hdr0->showHdr=R.drawable.hdr1
+                                R.drawable.hdr1->showHdr=0
+                            }
+                        },
+                        modifier=Modifier.size(50.dp)
+                    ){
+                        Image(painter= painterResource(id=showHdr),
                             contentDescription = "Hdr",
                             modifier= Modifier
                                 .size(50.dp)
@@ -326,7 +457,7 @@ fun TopTools(){
                     }
                     Spacer(modifier = Modifier.width(40.dp))
                 }
-
             } // end of lazyRow
+
     }// end of Box
 }
