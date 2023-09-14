@@ -51,6 +51,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import com.example.camera.analyzer.Luma
 import com.example.camera.analyzer.LuminosityAnalyzer
 import com.example.camera.bottom.CameraSelectors
 import com.example.camera.bottom.ImageCaptures
@@ -194,6 +195,7 @@ fun MyCameraX() {
 //    val flashmode = Mode()
 
 
+    var lumas = remember {mutableStateOf(0.0)}
     LogUtil.d("MyCameraX", "START")
 
     val lifecycleObserver = LocalLifecycleOwner.current//创建生命周期所有者
@@ -286,7 +288,10 @@ fun MyCameraX() {
                         .also{
                             it.setAnalyzer(cameraExecutor, LuminosityAnalyzer{ luma:Double ->
                                 LogUtil.d("ImageAnalyzer","Average luminosity:$luma")
-                            })
+                                lumas.value = luma
+//                                Luma(lumas)
+                            }
+                            )
                         }
                     // 3A
 
@@ -370,6 +375,7 @@ fun MyCameraX() {
 //            verticalAlignment = Alignment.CenterVertically,
 //            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
+//            Luma(lumas)
             LogUtil.d(TAG,"Row2 - Loading ChangeCameraSelectors")
             cameraGetSelectors = CameraSelectors()
              cameraSelects = cameraGetSelectors

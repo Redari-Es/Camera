@@ -2,9 +2,32 @@ package com.example.camera.analyzer
 
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import java.nio.ByteBuffer
+import java.time.format.TextStyle
+
 /** Helper type alias used for analysis use case callbacks */
 typealias LumaListener = (luma: Double) -> Unit
+
 
 class LuminosityAnalyzer(private val listener: LumaListener): ImageAnalysis.Analyzer {
     fun ByteBuffer.toByteArray(): ByteArray {
@@ -107,3 +130,35 @@ class LuminosityAnalyzer(private val listener: LumaListener): ImageAnalysis.Anal
             }
             }
      */
+@Preview(showBackground=true)
+    @Composable
+    fun Luma(luma: MutableState<Double>){
+        Box(modifier=Modifier.fillMaxSize()){
+            Surface(
+                shape= RoundedCornerShape(20.dp),
+                modifier = Modifier.width(140.dp)
+                    .align(alignment = Alignment.CenterEnd)
+                    .height(80.dp),
+                color = Color(0x00, 0x00, 0x00,0x20),
+                ){
+
+                    Text(
+                        "Luminosity: $luma.value",
+                        fontSize = 17.sp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp)
+                            .align(Alignment.Center),
+                        color=Color.White,
+                    )
+
+
+
+                }
+            }
+
+
+
+        }
+
+
