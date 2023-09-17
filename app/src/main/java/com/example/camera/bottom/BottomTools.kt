@@ -6,6 +6,8 @@ import android.os.Environment
 import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
+import androidx.camera.core.ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
 import androidx.camera.core.ImageCaptureException
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -97,14 +99,27 @@ fun ImageUris(imageUri: Uri?):Boolean{
 
 // BottomRow2
 //@Preview(showBackground=true)
+var flashMode=0
 @Composable
 fun ImageCaptures(context:Context): Pair<ImageCapture, MutableState<Uri?>>{
 //    fun ImageCaptures(context:Context):Result{
     //imageCapture是图像捕获用例，提交takePicture函数将图片拍摄到内存或保存到文件,并提供图像原数据
+    when(flashMode){
+//        0->
+    }
     var takeState by remember {mutableStateOf(false)}
     // imageCapture
     val imageCapture = remember {
-        ImageCapture.Builder().build()
+        ImageCapture.Builder()
+            // 质量
+            .setCaptureMode(CAPTURE_MODE_MAXIMIZE_QUALITY)
+            // 零快门延迟
+//            .setCaptureMode(CAPTURE_MODE_ZERO_SHUTTER_LAG)
+            // set flash Mode
+//            .setFlashMode(ImageCapture.FLASH_MODE_ON)
+//            .setFlashMode(ImageCapture.FLASH_MODE_OFF)
+            .setFlashMode(ImageCapture.FLASH_MODE_AUTO)
+            .build()
     }
     //在界面上显示图片,保存uri状态
     val imageGetUri = remember {
