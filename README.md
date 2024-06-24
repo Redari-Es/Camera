@@ -83,10 +83,12 @@ build the app use by the CameraX and Compose
 - 工具栏UI(未绑定系列功能)
 
 ## 效果显示
-![图标](img/pic-1) 
-![pic](img/pic-2) 
-![闪光灯](img/pic-3) 
-![参考线](img/pic-4) 
-![参考线](img/pic-5) 
-![参考线](img/pic-6) 
+<div class="pic" align=center>
+<img src="./img/pic-1 width="40%" height="40%">
+<img src="./img/pic-2 width="40%" height="40%">
+<img src="./img/pic-3 width="40%" height="40%">
+<img src="./img/pic-4 width="40%" height="40%">
+<img src="./img/pic-5 width="40%" height="40%">
+<img src="./img/pic-6 width="40%" height="40%">
+</div> 
 
