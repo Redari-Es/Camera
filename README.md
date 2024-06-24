@@ -84,11 +84,11 @@ build the app use by the CameraX and Compose
 
 ## 效果显示
 <div class="pic" align=center>
-<img src="./img/pic-1.png width="40%" height="40%">
-<img src="./img/pic-2.png width="40%" height="40%">
-<img src="./img/pic-3.png width="40%" height="40%">
-<img src="./img/pic-4.png width="40%" height="40%">
-<img src="./img/pic-5.png width="40%" height="40%">
-<img src="./img/pic-6.png width="40%" height="40%">
+<img src="./img/pic-1.png" width="40%" height="40%">
+<img src="./img/pic-2.png" width="40%" height="40%">
+<img src="./img/pic-3.png" width="40%" height="40%">
+<img src="./img/pic-4.png" width="40%" height="40%">
+<img src="./img/pic-5.png" width="40%" height="40%">
+<img src="./img/pic-6.png" width="40%" height="40%">
 </div> 
 
