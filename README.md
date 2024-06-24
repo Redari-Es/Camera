@@ -4,7 +4,7 @@ Camera app in Android
 ## Author
 Shon
 ### Email
-905422030@qq.com
+ShonH@redaries.xyz
 
 ## Develop Tools
 - Android Studio
@@ -74,9 +74,19 @@ initial
 To develop the new fountion
 build the app use by the CameraX and Compose
 
+## 目前已实现
+- 拍照
+- 图片存储（尚未存储到相册中）
+- 固定参考线（非动态)
+- 3A 
+- 闪光灯（有闪退错误)
+- 工具栏UI(未绑定系列功能)
 
+## 效果显示
+![图标](img/pic-1) 
+![pic](img/pic-2) 
+![闪光灯](img/pic-3) 
+![参考线](img/pic-4) 
+![参考线](img/pic-5) 
+![参考线](img/pic-6) 
 
-### Hotfix
-### feature
-### release
-### test
