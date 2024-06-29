@@ -1,23 +1,23 @@
 package com.example.camera.bottom
 
+import android.content.ContentValues
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
-import androidx.camera.core.ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
 import androidx.camera.core.ImageCaptureException
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -29,8 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -38,9 +36,14 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import coil.compose.rememberImagePainter
 import com.example.camera.R
-import com.example.camera.page.Album
 import com.example.camera.util.LogUtil
 import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.OutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 
 // BottomRow1
@@ -55,7 +58,8 @@ fun ImageUris(imageUri: Uri?):Boolean{
     var click by remember{mutableStateOf(0)}
 //    Album(imageUri)
     Box(
-        modifier=Modifier.fillMaxSize()
+        modifier= Modifier
+            .fillMaxSize()
             .padding(25.dp)
 //            .background(Color.Black)
     ){
@@ -65,7 +69,8 @@ fun ImageUris(imageUri: Uri?):Boolean{
             onClick = {
                       change=!change
             },
-            modifier = Modifier.size(60.dp)
+            modifier = Modifier
+                .size(60.dp)
                 .align(Alignment.BottomStart))
         {
             if (it == null) {
@@ -128,35 +133,40 @@ fun ImageCaptures(context:Context): Pair<ImageCapture, MutableState<Uri?>>{
     val fileUtils: com.example.camera.bottom.FileUtils by lazy { FileUtilsImpl() }
     // row1 //设置摄像头，默认使用背面的摄像头
     Box(
-        modifier=Modifier.fillMaxSize()
+        modifier= Modifier
+            .fillMaxSize()
             .padding(10.dp)
     ){
-    IconButton(onClick = {
-        fileUtils.createDirectoryIfNotExist(context)
-        val file = fileUtils.createFile(context)
-        //用于存储新捕获图像的选项outPutOptions
-        val outputOption = ImageCapture.OutputFileOptions.Builder(file).build()
-        // 调用拍照
-        imageCapture.takePicture(outputOption,
-            ContextCompat.getMainExecutor(context),//调用线程执行器
-            object : ImageCapture.OnImageSavedCallback { //为新捕获的图像调用回调
-                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    val saveUri = Uri.fromFile(file)//保存的图像地址
-                    Toast.makeText(context, saveUri.path, Toast.LENGTH_SHORT).show()
-                    imageGetUri.value = saveUri//设置图像显示路径
+    IconButton(
+        onClick = {
+            fileUtils.createDirectoryIfNotExist(context)
+            val file = fileUtils.createFile(context)
+            //用于存储新捕获图像的选项outPutOptions
+            val outputOption = ImageCapture.OutputFileOptions.Builder(file).build()
+            // 调用拍照
+            imageCapture.takePicture(outputOption,
+                ContextCompat.getMainExecutor(context),//调用线程执行器
+                object : ImageCapture.OnImageSavedCallback { //为新捕获的图像调用回调
+                    override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                        val saveUri = Uri.fromFile(file)//保存的图像地址
+                        Toast.makeText(context, saveUri.path, Toast.LENGTH_SHORT).show()
+                        imageGetUri.value = saveUri//设置图像显示路径
+                    }
+
+                    override fun onError(exception: ImageCaptureException) {
+                        LogUtil.e("Camera", "$exception")
+                    }
                 }
-                override fun onError(exception: ImageCaptureException) {
-                    LogUtil.e("Camera", "$exception")
-                }
-            }
-        )
-    },
-        modifier=Modifier.size(100.dp)
+            )
+        },
+        modifier = Modifier
+            .size(100.dp)
             .align(Alignment.BottomCenter),
     ) {
-        Image(painter= painterResource(id=R.drawable.takephoto),
+        Image(
+            painter = painterResource(id = R.drawable.takephoto),
             contentDescription = null,
-            modifier=Modifier
+            modifier = Modifier
                 .size(120.dp)
                 .align(Alignment.BottomCenter),
         )
@@ -178,7 +188,8 @@ fun CameraSelectors():CameraSelector{
         cameraSelectors=cameraSelector1
     }
     Box(
-        modifier=Modifier.fillMaxSize()
+        modifier= Modifier
+            .fillMaxSize()
             .padding(25.dp)
 //            .background(Color.Black)
     ) {
@@ -186,7 +197,8 @@ fun CameraSelectors():CameraSelector{
             onClick = {
                 cameraState = !cameraState
             },
-            modifier = Modifier.size(60.dp)
+            modifier = Modifier
+                .size(60.dp)
                 .align(Alignment.BottomEnd),
         ) {
             Image(
@@ -231,3 +243,61 @@ class FileUtilsImpl : FileUtils {
                 + File.separator + FOLDER_NAME + File.separator + IMAGE_PREFIX + System.currentTimeMillis() + JPG_SUFFIX
     )
 }
+
+
+object ImageUtils {
+
+    // 保存图片到相册
+    fun saveImageToGallery(context: Context, bitmap: Bitmap): Boolean {
+        var saved = false
+        var fos: OutputStream? = null
+        val relativeLocation = Environment.DIRECTORY_PICTURES + File.separator + "YourFolderName"
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.Images.Media.DISPLAY_NAME, generateFileName())
+                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                    put(MediaStore.Images.Media.RELATIVE_PATH, relativeLocation)
+                    put(MediaStore.Images.Media.IS_PENDING, 1)
+                }
+
+                val resolver = context.contentResolver
+                val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+
+                if (uri != null) {
+                    fos = resolver.openOutputStream(uri)
+                }
+            } else {
+                val imagesDir = Environment.getExternalStoragePublicDirectory(relativeLocation)
+                val image = File(imagesDir, generateFileName())
+                fos = FileOutputStream(image)
+            }
+
+            if (fos != null) {
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+                fos.flush()
+                fos.close()
+                saved = true
+            }
+        } catch (e: IOException) {
+            Log.e("ImageUtils", "Error saving image to gallery: ${e.message}")
+        } finally {
+            fos?.close()
+        }
+
+        return saved
+    }
+    private fun generateFileName(): String {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        return "IMG_$timeStamp.jpg"
+    }
+}
+// 使用
+// 假设有一个 Bitmap 对象叫做 bitmap
+//val saved = ImageUtils.saveImageToGallery(context, bitmap)
+//if (saved) {
+//    // 图片保存成功
+//} else {
+//    // 图片保存失败
+//}

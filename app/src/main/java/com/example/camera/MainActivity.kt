@@ -72,9 +72,9 @@ import java.util.concurrent.TimeUnit
 
 
 /*
-Copyright (Shon)
-Author: Shon(Redari-Es)
-Email: shon@redaries.xyz
+Copyright (ShonH)
+Author: ShonH(Redari-Es)
+Email: shonH@redaries.xyz
 ProjectName: The Monster Camera - 怪物卡美啦
 Github: https://github.com/Redari-Es/camera
 
